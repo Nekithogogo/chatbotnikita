@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Чат-бот</title>
+    <!-- Можно подключить style.css -->
+</head>
+<body>
+    <h1>Чат-бот</h1>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Введите сообщение...">
+    <button id="sendButton">Отправить</button>
+
+    <script>
+      const messagesDiv = document.getElementById('messages');
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+
+      function addMessage(text, sender) {
+          const messageElement = document.createElement('p');
+          messageElement.textContent = `${sender}: ${text}`;
+          messagesDiv.appendChild(messageElement);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight; // Прокрутка вниз
+      }
+
+      async function sendMessage() {
+          const text = messageInput.value.trim();
+          if (!text) return;
+
+          addMessage(text, 'Вы');
+          messageInput.value = '';
+
+          try {
+              const response = await fetch('/api/chat/message', { // Относительный путь!
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ message: text }),
+              });
+
+              if (!response.ok) {
+                  throw new Error(`Ошибка: ${response.status}`);
+              }
+
+              const data = await response.json();
+              addMessage(data.response, 'Бот');
+          } catch (error) {
+              console.error('Ошибка при отправке сообщения:', error);
+              addMessage('Ошибка: Не удалось получить ответ от бота.', 'Система');
+          }
+      }
+
+      sendButton.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') sendMessage();
+      });
+    </script>
+</body>
+</html>
